@@ -1,0 +1,7 @@
+## Interface: 11200
+## Author: Roadblock
+## Title: QuestSoundBits
+## Notes: Plays short sounds for Quest or Objective completion. Faction specific.
+## Version: 1.0
+
+QuestSoundBits.lua
