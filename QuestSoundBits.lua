@@ -4,13 +4,13 @@
 local SETTINGS = {
   ["Complete"] = true,
   ["Objective"] = true,
-  ["Progress"] = false,
+  ["Progress"] = true,
 }
 -- SETTINGS END --
 -- DO NOT EDIT ANYTHING BELOW THIS LINE --
 
 
--- Deformat the patterns to turn them into captures, anchor start / end
+-- Deformat the global announce patterns to turn them into captures, anchor start / end
 local tProgress = {}
 table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_ADD_FOUND_SII,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$")
 table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_ADD_ITEM_SII,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$")
@@ -27,19 +27,19 @@ local soundBits = {
     ["Complete"] = "Interface\\AddOns\\QuestSoundBits\\Peasant_job_done.mp3", -- job's done
   },
   ["Horde"] = {
+  --["Progress"] = "Sound\\Creature\\Peon\\PeonWhat4.wav", -- something need doing?
     ["Progress"] = "Sound\\Creature\\Peon\\PeonYes3.wav", -- work work
-    --["Progress"] = "Sound\\Creature\\Peon\\PeonWhat4.wav", -- something need doing?
     ["Objective"] = "Sound\\Creature\\Peon\\PeonReady1.wav", -- ready to work
     ["Complete"] = "Sound\\Creature\\Peon\\PeonBuildingComplete1.wav", -- work complete
   }
 }
 
-local lastAlertTime, lastAlert, p_faction
+local lastAlertTime, lastAlert, p_faction = nil, "_", nil
 local Speak = function(alertType)
-  p_faction = p_faction or (UnitFactionGroup("player"))
   local now = GetTime()
-  if ((lastAlert == nil) or (alertType ~= lastAlert))
-  and (lastAlertTime == nil or ((now - lastAlertTime) > 0.9)) then
+  p_faction = p_faction or (UnitFactionGroup("player"))
+  lastAlertTime = lastAlertTime or (now - 1.5)
+  if (alertType ~= lastAlert) or ((now - lastAlertTime) >= 1) then
     PlaySoundFile(soundBits[p_faction][alertType])
     lastAlert, lastAlertTime = alertType, now
   end
