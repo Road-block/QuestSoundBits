@@ -4,12 +4,12 @@
 local SETTINGS = {
   ["Complete"] = true,
   ["Objective"] = true,
-  ["Progress"] = true,
+  ["Progress"] = false,
 }
 -- SETTINGS END --
 -- DO NOT EDIT ANYTHING BELOW THIS LINE --
 
-
+local _G = getfenv(0)
 -- Deformat the global announce patterns to turn them into captures, anchor start / end
 local tProgress = {}
 table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_ADD_FOUND_SII,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$")
@@ -33,13 +33,20 @@ local soundBits = {
     ["Complete"] = "Sound\\Creature\\Peon\\PeonBuildingComplete1.wav", -- work complete
   }
 }
+local prio = {
+  ["Complete"] = 3,
+  ["Objective"] = 2,
+  ["Progress"] = 1
+}
 
-local lastAlertTime, lastAlert, p_faction = nil, "_", nil
+local lastAlertTime, lastAlert, p_faction
 local Speak = function(alertType)
   local now = GetTime()
   p_faction = p_faction or (UnitFactionGroup("player"))
-  lastAlertTime = lastAlertTime or (now - 1.5)
-  if (alertType ~= lastAlert) or ((now - lastAlertTime) >= 1) then
+  local interval = (lastAlertTime == nil) and 10 or (now - lastAlertTime)
+  if ( interval >= 1 ) 
+  or ( lastAlert == nil )
+  or ( (lastAlert ~= nil) and (prio[alertType] > prio[lastAlert]) ) then
     PlaySoundFile(soundBits[p_faction][alertType])
     lastAlert, lastAlertTime = alertType, now
   end
@@ -82,3 +89,4 @@ events.UI_INFO_MESSAGE = function(self,event,message)
   end
 end
 
+_G["QuestSoundBits"] = events
