@@ -4,7 +4,7 @@
 local SETTINGS = {
   ["Complete"] = true,
   ["Objective"] = true,
-  ["Progress"] = false,
+  ["Progress"] = true
 }
 -- SETTINGS END --
 -- DO NOT EDIT ANYTHING BELOW THIS LINE --
@@ -18,6 +18,7 @@ table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_ADD_KILL_SII,"%%%d
 local tObjective = {}
 table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_OBJECTIVE_COMPLETE_S,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$")
 table.insert(tProgress,"^"..string.gsub(string.gsub(ERR_QUEST_UNKNOWN_COMPLETE,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$")
+-- useless for our purpose at this point, only CHAT_MSG_SYSTEM at quest turn-in uses this pattern
 local qComplete = "^"..string.gsub(string.gsub(ERR_QUEST_COMPLETE_S,"%%%d?%$?s", "(.+)"),"%%%d?%$?d","(%%d+)").."$"
 
 local soundBits = {
@@ -38,7 +39,7 @@ local prio = {
   ["Objective"] = 2,
   ["Progress"] = 1
 }
-
+local completedCache = {}
 local lastAlertTime, lastAlert, p_faction
 local Speak = function(alertType)
   local now = GetTime()
@@ -61,16 +62,19 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events.PLAYER_ALIVE = function(self,event)
   p_faction = (UnitFactionGroup("player"))
   self:RegisterEvent("UI_INFO_MESSAGE")
+  self:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
 end
 events.PLAYER_ENTERING_WORLD = events.PLAYER_ALIVE
 events.UI_INFO_MESSAGE = function(self,event,message)
-  if SETTINGS["Complete"] and string.find(message,qComplete) then
+  -- completion doesn't fire a UI_INFO_MESSAGE in 1.12.1 but keep it because "who knows" maybe down the road
+  if SETTINGS["Complete"] and string.find(message,qComplete) then 
     Speak("Complete")
+    return
   else
     for _,objPattern in ipairs(tObjective) do
       if SETTINGS["Objective"] and string.find(message,objPattern) then
         Speak("Objective")
-        break
+        return
       end
     end
     for _,pgPattern in ipairs(tProgress) do
@@ -79,14 +83,36 @@ events.UI_INFO_MESSAGE = function(self,event,message)
         have,need = tonumber(have),tonumber(need)
         if have == need then
           if SETTINGS["Objective"] then Speak("Objective") end
-          break
+          return
         elseif have < need then
           if SETTINGS["Progress"] then Speak("Progress") end
-          break
+          return
         end
       end
     end
   end
 end
-
-_G["QuestSoundBits"] = events
+events.UNIT_QUEST_LOG_CHANGED = function(self,event,unitid)
+  if unitid and unitid == "player" then
+    self:RegisterEvent("QUEST_LOG_UPDATE")
+  end
+end
+events.QUEST_LOG_UPDATE = function(self,event)
+  self:UnregisterEvent("QUEST_LOG_UPDATE")
+  local numQuests = GetNumQuestLogEntries()
+  local questLogTitleText, questLevel, questTag, isHeader, isCollapsed, isComplete 
+  if numQuests > 0 then
+    for i=1,numQuests,1 do 
+      questLogTitleText, questLevel, questTag, isHeader, isCollapsed, isComplete = GetQuestLogTitle(i)
+      completedCache[questLogTitleText] = completedCache[questLogTitleText] or {}
+      completedCache[questLogTitleText]["stored"] = true
+      if (isComplete and isComplete > 0) and not isHeader then
+        if completedCache[questLogTitleText]["completed"] == nil then
+          completedCache[questLogTitleText]["completed"] = true
+          Speak("Complete")
+          return
+        end
+      end
+    end
+  end
+end
