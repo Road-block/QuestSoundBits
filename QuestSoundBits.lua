@@ -151,7 +151,7 @@ events.QUEST_LOG_UPDATE = function(self,event)
   if self.variablesLoaded == nil then return end
   self:UnregisterEvent("QUEST_LOG_UPDATE")
   local numQuests = GetNumQuestLogEntries()
-  if self.numQuests and (numQuests < self.numQuests) then return end -- we just abandoned a quest, skip this update
+  if self.numQuests and (numQuests ~= self.numQuests) then return end -- we just picked up or abandoned a quest, skip this update
   local questLogTitleText, questLevel, questTag, isHeader, isCollapsed, isComplete 
   if numQuests > 0 then
     for i=1,numQuests,1 do 
