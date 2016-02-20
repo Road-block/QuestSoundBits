@@ -2,6 +2,7 @@
 ## Author: Roadblock
 ## Title: QuestSoundBits
 ## Notes: Plays short sounds for Quest or Objective completion. Faction specific.
-## Version: 1.3
+## Version: 2.0
+## SavedVariables: QuestSoundBitsDB
 
 QuestSoundBits.lua
