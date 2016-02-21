@@ -154,17 +154,17 @@ events.QUEST_LOG_UPDATE = function(self,event)
   if self.numQuests and (numQuests ~= self.numQuests) then return end -- we just picked up or abandoned a quest, skip this update
   local questLogTitleText, questLevel, questTag, isHeader, isCollapsed, isComplete 
   if numQuests > 0 then
+    local newComplete = false
     for i=1,numQuests,1 do 
       questLogTitleText, questLevel, questTag, isHeader, isCollapsed, isComplete = GetQuestLogTitle(i)
-      completedCache[questLogTitleText] = completedCache[questLogTitleText] or {}
       if (isComplete and isComplete > 0) and not isHeader then
-        if completedCache[questLogTitleText]["completed"] == nil then
-          completedCache[questLogTitleText]["completed"] = true
-          if self.config["Complete"] then Listen("Complete") end
-          return
+        if completedCache[questLogTitleText] == nil then
+          completedCache[questLogTitleText] = true
+          newComplete = true
         end
       end
     end
+    if newComplete and self.config["Complete"] then Listen("Complete") end
   end
 end
 events.VARIABLES_LOADED = function(self,event)
